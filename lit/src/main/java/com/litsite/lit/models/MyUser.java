@@ -15,22 +15,12 @@ import java.util.*;
 @Getter
 @Setter
 @NoArgsConstructor
-public class MyUser implements UserDetails {
+public class MyUser {
     public MyUser(String username, String email, String encode, String login) {
         this.username = username;
         this.email = email;
         this.passwordHash = encode;
         this.login = login;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
-    }
-
-    @Override
-    public String getPassword() {
-        return passwordHash;
     }
 
     @Id
