@@ -1,9 +1,11 @@
 package com.litsite.lit.dto;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-public class UserCredentialsDto {
+@Getter
+@Setter
+public class LoginUserDto {
     private String email;
     private String password;
 }
