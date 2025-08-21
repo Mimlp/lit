@@ -1,7 +1,11 @@
 package com.litsite.lit.controller;
 
+import com.litsite.lit.dto.RegisterUserDto;
 import com.litsite.lit.models.MyUser;
+import com.litsite.lit.security.CustomUserDetails;
+import com.litsite.lit.security.CustomUserService;
 import com.litsite.lit.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,19 +15,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@RequestMapping("/users")
+@RequestMapping("/user")
 @RestController
+@RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
 
     @GetMapping("/me")
-    public ResponseEntity<MyUser> authenticatedUser() {
+    public ResponseEntity<RegisterUserDto> authenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        MyUser currentUser = (MyUser) authentication.getPrincipal();
-        return ResponseEntity.ok(currentUser);
+        CustomUserDetails currentUser = (CustomUserDetails) authentication.getPrincipal();
+        RegisterUserDto rud = new RegisterUserDto();
+        rud.setEmail(currentUser.user().getEmail());
+        rud.setLogin(currentUser.user().getLogin());
+        rud.setPassword(currentUser.getPassword());
+        rud.setUsername(currentUser.getUsername());
+        return ResponseEntity.ok(rud);
     }
 
     @GetMapping

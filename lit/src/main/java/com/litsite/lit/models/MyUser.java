@@ -1,9 +1,8 @@
 package com.litsite.lit.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -12,26 +11,10 @@ import java.util.*;
 
 @Entity
 @Table(name = "my_user")
-@Getter
-@Setter
+@Data
+@ToString
 @NoArgsConstructor
-public class MyUser implements UserDetails {
-    public MyUser(String username, String email, String encode, String login) {
-        this.username = username;
-        this.email = email;
-        this.passwordHash = encode;
-        this.login = login;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
-    }
-
-    @Override
-    public String getPassword() {
-        return passwordHash;
-    }
+public class MyUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,7 +31,7 @@ public class MyUser implements UserDetails {
     private String verificationCode;
     private LocalDateTime verificationCodeExpiresAt;
 
-    public Boolean getEnabled() {
+    public Boolean isEnabled() {
         return isEnabled;
     }
 
@@ -56,15 +39,19 @@ public class MyUser implements UserDetails {
         this.isEnabled = isEnabled;
     }
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Book> books = new ArrayList<>();
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Comment> comments = new ArrayList<>();
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<BookList> bookLists = new ArrayList<>();
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Rating> ratings = new ArrayList<>();
 

@@ -3,37 +3,36 @@ package com.litsite.lit.service;
 import com.litsite.lit.dto.*;
 import com.litsite.lit.models.MyUser;
 import com.litsite.lit.repository.UserRepository;
+import com.litsite.lit.security.CustomUserDetails;
+import com.litsite.lit.security.CustomUserService;
+import com.litsite.lit.security.jwt.JwtService;
 import jakarta.mail.MessagingException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.naming.AuthenticationException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
 
 @Service
+@RequiredArgsConstructor
 public class AuthenticationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
-
-    public AuthenticationService(
-            UserRepository userRepository,
-            AuthenticationManager authenticationManager,
-            PasswordEncoder passwordEncoder,
-            EmailService emailService
-    ) {
-        this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
-    }
+    private final JwtService jwtService;
 
     public MyUser signup(RegisterUserDto input) {
-        MyUser user = new MyUser(input.getUsername(), input.getEmail(), passwordEncoder.encode(input.getPassword()), input.getLogin());
+        MyUser user = new MyUser();
+        user.setUsername(input.getUsername());
+        user.setEmail(input.getEmail());
+        user.setPasswordHash(passwordEncoder.encode(input.getPassword()));
+        user.setLogin(input.getLogin());
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
@@ -94,6 +93,16 @@ public class AuthenticationService {
         } else {
             throw new RuntimeException("User not found");
         }
+    }
+
+    public JwtAuthDto refreshToken(RefreshTokenDto refreshTokenDto) throws Exception {
+        String refreshToken = refreshTokenDto.getRefreshToken();
+        if (refreshToken != null && jwtService.validateJwtToken(refreshToken)) {
+            MyUser user = userRepository.findByEmail(jwtService.getEmailFromToken(refreshToken))
+                    .orElseThrow(() -> new Exception(String.format("User with email %s not found", jwtService.getEmailFromToken(refreshToken))));
+            return jwtService.refreshBaseToken(user.getEmail(), refreshToken);
+        }
+        throw new AuthenticationException("Invalid refresh token");
     }
 
     private void sendVerificationEmail(MyUser user) { //TODO: Update with company logo

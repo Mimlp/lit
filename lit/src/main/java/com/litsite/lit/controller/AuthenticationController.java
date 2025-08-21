@@ -2,23 +2,18 @@ package com.litsite.lit.controller;
 
 import com.litsite.lit.dto.*;
 import com.litsite.lit.models.MyUser;
-import com.litsite.lit.responses.LoginResponse;
 import com.litsite.lit.service.AuthenticationService;
-import com.litsite.lit.security.JwtService;
+import com.litsite.lit.security.jwt.JwtService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/auth")
 @RestController
+@RequiredArgsConstructor
 public class AuthenticationController {
     private final JwtService jwtService;
-
     private final AuthenticationService authenticationService;
-
-    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService) {
-        this.jwtService = jwtService;
-        this.authenticationService = authenticationService;
-    }
 
     @PostMapping("/signup")
     public ResponseEntity<MyUser> register(@RequestBody RegisterUserDto registerUserDto) {
@@ -27,11 +22,10 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto){
+    public ResponseEntity<JwtAuthDto> authenticate(@RequestBody LoginUserDto loginUserDto){
         MyUser authenticatedUser = authenticationService.authenticate(loginUserDto);
-        String jwtToken = jwtService.generateToken(authenticatedUser);
-        LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());
-        return ResponseEntity.ok(loginResponse);
+        JwtAuthDto jwtAuthDto = jwtService.generateAuthToken(authenticatedUser.getEmail());
+        return ResponseEntity.ok(jwtAuthDto);
     }
 
     @PostMapping("/verify")
@@ -52,5 +46,10 @@ public class AuthenticationController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @PostMapping("/refresh")
+    public JwtAuthDto refresh(@RequestBody RefreshTokenDto refreshTokenDto) throws Exception {
+        return authenticationService.refreshToken(refreshTokenDto);
     }
 }
