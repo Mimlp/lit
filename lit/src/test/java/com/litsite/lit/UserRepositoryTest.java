@@ -25,7 +25,7 @@ class UserRepositoryTest {
         MyUser saved = userRepository.save(user);
         assertThat(saved.getUserId()).isNotNull();
 
-        MyUser found = userRepository.findById(Long.valueOf(saved.getUserId())).orElse(null);
+        MyUser found = userRepository.findById(Integer.valueOf(saved.getUserId())).orElse(null);
         assertThat(found).isNotNull();
         assertThat(found.getUsername()).isEqualTo("Жипип");
         assertThat(found.getEmail()).isEqualTo("jipip2004@mail.ru");

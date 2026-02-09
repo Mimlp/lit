@@ -22,6 +22,7 @@ public class Book {
     private String title;
     private LocalDateTime publicationDate;
     private Integer viewsAmount;
+    private String description;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
