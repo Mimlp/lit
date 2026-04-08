@@ -1,13 +1,13 @@
 package com.litsite.lit.controller;
 
 import com.litsite.lit.dto.AddBookDto;
-import com.litsite.lit.dto.RegisterUserDto;
-import com.litsite.lit.dto.UpdateProfileDescriptionDto;
+import com.litsite.lit.dto.AuthorDto;
+import com.litsite.lit.dto.UpdateProfileDto;
 import com.litsite.lit.dto.UserDto;
+import com.litsite.lit.mapper.UserMapper;
 import com.litsite.lit.models.Book;
 import com.litsite.lit.models.MyUser;
 import com.litsite.lit.security.CustomUserDetails;
-import com.litsite.lit.security.CustomUserService;
 import com.litsite.lit.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,24 +24,24 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final UserMapper userMapper;
 
     @Transactional
     @GetMapping("/me")
-    public ResponseEntity<MyUser> authenticatedUser() {
+    public ResponseEntity<UserDto> authenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails currentUser = (CustomUserDetails) authentication.getPrincipal();
         MyUser user = userService.getUser(currentUser.user().getEmail());
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(userMapper.toDto(user));
     }
 
-
-    @PutMapping("/me/description")
+    @PutMapping("/me/profile")
     @Transactional
-    public ResponseEntity<MyUser> updateProfileDescription(@RequestBody UpdateProfileDescriptionDto dto) {
+    public ResponseEntity<UserDto> updateProfile(@RequestBody UpdateProfileDto updateProfileDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails currentUser = (CustomUserDetails) authentication.getPrincipal();
-        MyUser user = userService.updateProfileDescription(currentUser.getUsername(), dto.getProfileDescription());
-        return ResponseEntity.ok(user);
+        MyUser user = userService.updateProfile(currentUser.getUsername(), updateProfileDto);
+        return ResponseEntity.ok(userMapper.toDto(user));
     }
 
     @PostMapping("/me/addwork")
@@ -63,10 +63,14 @@ public class UserController {
         return ResponseEntity.ok(savedBook.getBookId()); // id уже есть
     }
 
-
     @GetMapping
-    public ResponseEntity<List<MyUser>> allUsers() {
-        List <MyUser> users = userService.allUsers();
+    public ResponseEntity<List<UserDto>> allUsers() {
+        List <UserDto> users = userMapper.toDto(userService.allUsers());
         return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AuthorDto> getUser(@PathVariable Integer id) {
+        return ResponseEntity.ok(userService.getAuthor(id));
     }
 }

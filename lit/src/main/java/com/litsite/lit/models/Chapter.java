@@ -15,8 +15,16 @@ public class Chapter {
 
     private Integer chapterNumber;
     private String chapterText;
+    private String chapterTitle;
 
     @ManyToOne
     @JoinColumn(name = "book_id")
     private Book book;
+
+    public void decreaseChapterNumber() {
+        this.chapterNumber--;
+    }
+    public void increaseChapterNumber() {
+        this.chapterNumber++;
+    }
 }
