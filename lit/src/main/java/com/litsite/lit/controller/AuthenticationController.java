@@ -2,11 +2,13 @@ package com.litsite.lit.controller;
 
 import com.litsite.lit.dto.*;
 import com.litsite.lit.models.MyUser;
-import com.litsite.lit.service.AuthenticationService;
 import com.litsite.lit.security.jwt.JwtService;
+import com.litsite.lit.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RequestMapping("/auth")
 @RestController
@@ -32,7 +34,7 @@ public class AuthenticationController {
     public ResponseEntity<?> verifyUser(@RequestBody VerifyUserDto verifyUserDto) {
         try {
             authenticationService.verifyUser(verifyUserDto);
-            return ResponseEntity.ok("Account verified successfully");
+            return ResponseEntity.ok(Map.of("message", "Account verified successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

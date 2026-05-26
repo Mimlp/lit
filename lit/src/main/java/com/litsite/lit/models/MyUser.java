@@ -18,9 +18,8 @@ public class MyUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer userId;
+    private Long userId;
 
-    private String login;
     private String passwordHash;
     private String username;
     private String email;
@@ -55,8 +54,7 @@ public class MyUser {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Rating> ratings = new ArrayList<>();
 
-    public MyUser(String login, String passwordHash, String username, String email, LocalDateTime registrationDate, String profileDescription) {
-        this.login = login;
+    public MyUser(String passwordHash, String username, String email, LocalDateTime registrationDate, String profileDescription) {
         this.passwordHash = passwordHash;
         this.username = username;
         this.email = email;
@@ -64,8 +62,7 @@ public class MyUser {
         this.profileDescription = profileDescription;
     }
 
-    public MyUser(String login, String passwordHash, String username, String email, LocalDateTime registrationDate, String profileDescription, List<Book> books, List<Comment> comments, List<BookList> bookLists, List<Rating> ratings) {
-        this.login = login;
+    public MyUser(String passwordHash, String username, String email, LocalDateTime registrationDate, String profileDescription, List<Book> books, List<Comment> comments, List<BookList> bookLists, List<Rating> ratings) {
         this.passwordHash = passwordHash;
         this.username = username;
         this.email = email;

@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface ChapterRepository extends JpaRepository<Chapter, Integer> {
-    List<Chapter> findByBookBookIdOrderByChapterNumberAsc(Integer bookId);
+public interface ChapterRepository extends JpaRepository<Chapter, Long> {
+    List<Chapter> findByBookBookIdOrderByChapterNumberAsc(Long bookId);
 }

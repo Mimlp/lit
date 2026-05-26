@@ -3,8 +3,6 @@ package com.litsite.lit.service;
 import com.litsite.lit.dto.*;
 import com.litsite.lit.models.MyUser;
 import com.litsite.lit.repository.UserRepository;
-import com.litsite.lit.security.CustomUserDetails;
-import com.litsite.lit.security.CustomUserService;
 import com.litsite.lit.security.jwt.JwtService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +30,6 @@ public class AuthenticationService {
         user.setUsername(input.getUsername());
         user.setEmail(input.getEmail());
         user.setPasswordHash(passwordEncoder.encode(input.getPassword()));
-        user.setLogin(input.getLogin());
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
@@ -124,7 +121,6 @@ public class AuthenticationService {
         try {
             emailService.sendVerificationEmail(user.getEmail(), subject, htmlMessage);
         } catch (MessagingException e) {
-            // Handle email sending exception
             e.printStackTrace();
         }
     }

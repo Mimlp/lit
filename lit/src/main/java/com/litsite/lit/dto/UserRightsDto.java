@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class UserRightsDto {
-    private boolean isAuthor;
-    private boolean isAuthenticated;
+    private boolean isAuthor = false;
+    private boolean isAuthenticated = false;
 }

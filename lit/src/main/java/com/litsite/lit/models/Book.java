@@ -17,7 +17,7 @@ import java.util.Set;
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer bookId;
+    private Long bookId;
 
     private String title;
     private LocalDateTime publicationDate;

@@ -7,13 +7,10 @@ import com.litsite.lit.dto.UserDto;
 import com.litsite.lit.mapper.UserMapper;
 import com.litsite.lit.models.Book;
 import com.litsite.lit.models.MyUser;
-import com.litsite.lit.security.CustomUserDetails;
 import com.litsite.lit.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -25,52 +22,47 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final UserMapper userMapper;
+    private final AuthHelper authHelper;
 
     @Transactional
     @GetMapping("/me")
     public ResponseEntity<UserDto> authenticatedUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails currentUser = (CustomUserDetails) authentication.getPrincipal();
-        MyUser user = userService.getUser(currentUser.user().getEmail());
-        return ResponseEntity.ok(userMapper.toDto(user));
+        MyUser currentUser = authHelper.getCurrentUserOrThrow();
+        return ResponseEntity.ok(userMapper.toDto(currentUser));
     }
 
     @PutMapping("/me/profile")
     @Transactional
     public ResponseEntity<UserDto> updateProfile(@RequestBody UpdateProfileDto updateProfileDto) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails currentUser = (CustomUserDetails) authentication.getPrincipal();
-        MyUser user = userService.updateProfile(currentUser.getUsername(), updateProfileDto);
-        return ResponseEntity.ok(userMapper.toDto(user));
+        MyUser currentUser = authHelper.getCurrentUserOrThrow();
+        MyUser updated = userService.updateProfile(currentUser.getEmail(), updateProfileDto);
+        return ResponseEntity.ok(userMapper.toDto(updated));
     }
 
     @PostMapping("/me/addwork")
     @Transactional
-    public ResponseEntity<Integer> addWork(@RequestBody AddBookDto dto) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails currentUser = (CustomUserDetails) authentication.getPrincipal();
-        MyUser user = userService.getUser(currentUser.getUsername());
+    public ResponseEntity<Long> addWork(@RequestBody AddBookDto dto) {
+        MyUser currentUser = authHelper.getCurrentUserOrThrow();
 
         Book book = new Book();
         book.setTitle(dto.getTitle());
         book.setDescription(dto.getDescription());
         book.setPublicationDate(LocalDateTime.now());
         book.setViewsAmount(0);
-        book.setUser(user);
+        book.setUser(currentUser);
 
-        Book savedBook = userService.saveBook(book); // сохраняем напрямую
-
-        return ResponseEntity.ok(savedBook.getBookId()); // id уже есть
+        Book savedBook = userService.saveBook(book);
+        return ResponseEntity.ok(savedBook.getBookId());
     }
 
     @GetMapping
     public ResponseEntity<List<UserDto>> allUsers() {
-        List <UserDto> users = userMapper.toDto(userService.allUsers());
+        List<UserDto> users = userMapper.toDto(userService.allUsers());
         return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AuthorDto> getUser(@PathVariable Integer id) {
+    public ResponseEntity<AuthorDto> getUser(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getAuthor(id));
     }
 }

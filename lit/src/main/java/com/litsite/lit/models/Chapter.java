@@ -11,7 +11,7 @@ import lombok.Setter;
 public class Chapter {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer chapterId;
+    private Long chapterId;
 
     private Integer chapterNumber;
     private String chapterText;

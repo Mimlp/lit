@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class ChapterDto {
-    private Integer chapterId;
+    private Long chapterId;
     private Integer chapterNumber;
     private String chapterText;
     private String chapterTitle;

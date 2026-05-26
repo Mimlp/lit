@@ -36,7 +36,7 @@ public class UserService {
         return user;
     }
 
-    public AuthorDto getAuthor(Integer id) {
+    public AuthorDto getAuthor(Long id) {
         Optional<MyUser> myUser = userRepository.findById(id);
         if (myUser.isEmpty()) {
             throw new UserNotFoundException("User not found");

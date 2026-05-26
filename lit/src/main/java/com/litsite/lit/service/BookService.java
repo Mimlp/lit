@@ -1,7 +1,7 @@
 package com.litsite.lit.service;
 
-import com.litsite.lit.dto.BookDto;
-import com.litsite.lit.dto.TagDto;
+import com.litsite.lit.controller.AuthHelper;
+import com.litsite.lit.dto.*;
 import com.litsite.lit.mapper.BookMapper;
 import com.litsite.lit.mapper.TagMapper;
 import com.litsite.lit.models.Book;
@@ -19,7 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,66 +30,134 @@ public class BookService {
     private final BookMapper bookMapper;
     private final TagMapper tagMapper;
     private final TagRepository tagRepository;
+    private final RatingService ratingService;
+    private final AuthHelper authHelper;
+
     @Transactional
-    public BookDto getBookById(int id) {
+    public BookDto getBookById(Long id) {
         Book book = bookRepository.findByIdWithUser(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found"));
-        return bookMapper.bookToBookDto(book, getCurrentUserId());
+
+        BookDto dto = bookMapper.bookToBookDto(book, authHelper.getCurrentUserId());
+        enrichWithRating(dto, id);
+        return dto;
     }
 
-    public List<BookDto> getAllBooks() {
-        Integer currentUserId = getCurrentUserId();
-        return bookRepository.findAll().stream()
-                .map(b -> bookMapper.bookToBookDto(b, currentUserId))
-                .toList();
+    public List<BookSimpleDto> getAllBooks() {
+        List<Book> books = bookRepository.findAll();
+        return enrichSimpleDtosWithRating(books);
     }
 
-    public List<BookDto> getMyBooks() {
-        Integer userId = getCurrentUserId();
+    public List<BookSimpleDto> getMyBooks() {
+        Long userId = authHelper.getCurrentUserId();
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
         }
-
-        return bookRepository.findByUserUserIdOrderByPublicationDateDesc(userId).stream()
-                .map(book -> bookMapper.bookToBookDto(book, userId))
-                .toList();
+        List<Book> books = bookRepository.findByUserUserIdOrderByPublicationDateDesc(userId);
+        return enrichSimpleDtosWithRating(books);
     }
 
-    public List<BookDto> getBooksByUserId(int userId) {
-        Integer currentUserId = getCurrentUserId();
-        return bookRepository.findByUserUserIdOrderByPublicationDateDesc(userId).stream()
-                .map(b -> bookMapper.bookToBookDto(b, currentUserId))
-                .toList();
+    public List<BookSimpleDto> getBooksByUserId(Long userId) {
+        List<Book> books = bookRepository.findByUserUserIdOrderByPublicationDateDesc(userId);
+        return enrichSimpleDtosWithRating(books);
     }
 
-    public BookDto updateBook(int id, BookDto bookDto) {
+    private List<BookSimpleDto> enrichSimpleDtosWithRating(List<Book> books) {
+        List<BookSimpleDto> dtos = bookMapper.booksToBookSimpleDtos(books);
+
+        Map<Long, RatingStats> statsMap = books.stream()
+                .collect(Collectors.toMap(
+                        Book::getBookId,
+                        book -> ratingService.getRatingStats(book.getBookId())
+                ));
+
+        for (int i = 0; i < dtos.size(); i++) {
+            RatingStats stats = statsMap.get(books.get(i).getBookId());
+            dtos.get(i).setRating(stats.getAverage());
+            dtos.get(i).setRatingCount(stats.getCount());
+        }
+
+        return dtos;
+    }
+
+    @Transactional
+    public BookDto updateBookTags(Long bookId, Set<Long> tagIds, MyUser currentUser) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Книга не найдена"));
+
+        if (!book.getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Только автор может изменять теги книги");
+        }
+
+        Set<Tag> tags = tagRepository.findAllById(tagIds)
+                .stream()
+                .collect(Collectors.toSet());
+
+        book.getTags().clear();
+        book.getTags().addAll(tags);
+
+        for (Tag tag : tags) {
+            tag.getBooks().add(book);
+        }
+
+        Book saved = bookRepository.save(book);
+        return bookMapper.bookToBookDto(saved, currentUser.getUserId());
+    }
+
+    private void enrichWithRating(BookDto dto, Long bookId) {
+        var stats = ratingService.getRatingStats(bookId);
+        dto.setRating(stats.getAverage());
+        dto.setRatingCount(stats.getCount());
+    }
+
+    public BookDto updateBook(Long id, BookDto bookDto) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found"));
 
         book.setTitle(bookDto.getTitle());
         book.setDescription(bookDto.getDescription());
-        // При обновлении права можно не пересчитывать, либо вернуть как выше
         return bookMapper.bookToBookDto(bookRepository.save(book), getCurrentUserId());
     }
 
-    // 🔹 Единый безопасный метод получения ID
-    private Integer getCurrentUserId() {
+    public void deleteBook(Long id) {
+        bookRepository.deleteById(id);
+    }
+
+    private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails details) {
             return details.user().getUserId();
         }
-        return null; // Анонимный пользователь
+        return null;
     }
 
-    private MyUser getCurrentUserOrThrow() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails details) {
-            return details.user();
+    public List<BookSimpleDto> findBooksByFilter(BookFilterRequest filter) {
+        String keyword = filter.getKeyword();
+        if (keyword != null && keyword.isBlank()) {
+            keyword = null;
         }
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+
+        Set<Long> tagIds = filter.getTagIds();
+        if (tagIds != null && tagIds.isEmpty()) {
+            tagIds = null;
+        }
+
+        return enrichSimpleDtosWithRating(
+                bookRepository.findByKeywordAndTags(keyword, tagIds)
+        );
     }
 
     public List<TagDto> getAllTags() {
         return tagMapper.tagToTagDtoList(tagRepository.findAll());
+    }
+
+    public TagDto addNewTag(TagDto tagDto) {
+        if (tagRepository.findByTagNameIgnoreCase(tagDto.getTagName()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tag already exists");
+        }
+        Tag tag = new Tag();
+        tag.setTagName(tagDto.getTagName());
+        tag = tagRepository.save(tag);
+        return tagMapper.tagToTagDto(tag);
     }
 }

@@ -15,7 +15,7 @@ import java.util.Set;
 public class BookList {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer listId;
+    private Long listId;
 
     private String title;
     private LocalDateTime creationDate;
