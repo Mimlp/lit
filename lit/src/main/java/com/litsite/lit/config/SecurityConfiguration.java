@@ -33,8 +33,14 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/user/me/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/books/**").authenticated()
+<<<<<<< Updated upstream
                         .requestMatchers(HttpMethod.DELETE, "/books/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/books/**").authenticated()
+=======
+                        .requestMatchers(HttpMethod.DELETE, "/books/**", "/api/user/me/avatar").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/books/**", "/api/user/me/avatar").authenticated()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+>>>>>>> Stashed changes
                         .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session

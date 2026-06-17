@@ -1,4 +1,7 @@
+<<<<<<< Updated upstream
 // com.litsite.lit.dto.CommentDto
+=======
+>>>>>>> Stashed changes
 package com.litsite.lit.dto;
 
 import lombok.Data;

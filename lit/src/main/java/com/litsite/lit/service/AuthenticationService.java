@@ -2,6 +2,8 @@ package com.litsite.lit.service;
 
 import com.litsite.lit.dto.*;
 import com.litsite.lit.models.MyUser;
+import com.litsite.lit.models.Role;
+import com.litsite.lit.repository.RoleRepository;
 import com.litsite.lit.repository.UserRepository;
 import com.litsite.lit.security.jwt.JwtService;
 import jakarta.mail.MessagingException;
@@ -13,8 +15,7 @@ import org.springframework.stereotype.Service;
 
 import javax.naming.AuthenticationException;
 import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
     private final JwtService jwtService;
+    private final RoleRepository roleRepository;
 
     public MyUser signup(RegisterUserDto input) {
         MyUser user = new MyUser();
@@ -33,7 +35,12 @@ public class AuthenticationService {
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
         user.setEnabled(false);
-        user.setRoles("ROLE_USER");
+        Role userRole = roleRepository.findByName("ROLE_USER").orElseThrow(
+                () -> new RuntimeException("Role Not Found")
+        );
+        Set<Role> userRoles = new HashSet<>();
+        userRoles.add(userRole);
+        user.setRoles(userRoles);
         user.setRegistrationDate(LocalDateTime.now());
         sendVerificationEmail(user);
         return userRepository.save(user);
@@ -103,16 +110,15 @@ public class AuthenticationService {
     }
 
     private void sendVerificationEmail(MyUser user) { //TODO: Update with company logo
-        String subject = "Account Verification";
-        String verificationCode = "VERIFICATION CODE " + user.getVerificationCode();
+        String subject = "Верификация аккаунта";
+        String verificationCode = "КОД ПОДТВЕРЖДЕНИЯ " + user.getVerificationCode();
         String htmlMessage = "<html>"
                 + "<body style=\"font-family: Arial, sans-serif;\">"
                 + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
-                + "<h2 style=\"color: #333;\">Welcome to our app!</h2>"
-                + "<p style=\"font-size: 16px;\">Please enter the verification code below to continue:</p>"
+                + "<h2 style=\"color: #333;\">Добро пожаловать на наш сайт!</h2>"
+                + "<p style=\"font-size: 16px;\">Введите код подтверждения для продолжения:</p>"
                 + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
-                + "<h3 style=\"color: #333;\">Verification Code:</h3>"
-                + "<p style=\"font-size: 18px; font-weight: bold; color: #007bff;\">" + verificationCode + "</p>"
+                + "<p style=\"font-size: 18px; font-weight: bold; color: #066100;\">" + verificationCode + "</p>"
                 + "</div>"
                 + "</div>"
                 + "</body>"
@@ -120,7 +126,11 @@ public class AuthenticationService {
 
         try {
             emailService.sendVerificationEmail(user.getEmail(), subject, htmlMessage);
+<<<<<<< Updated upstream
         } catch (MessagingException e) {
+=======
+        } catch (Exception e) {
+>>>>>>> Stashed changes
             e.printStackTrace();
         }
     }

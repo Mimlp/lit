@@ -1,4 +1,7 @@
+<<<<<<< Updated upstream
 // com.litsite.lit.service.RatingService.java
+=======
+>>>>>>> Stashed changes
 package com.litsite.lit.service;
 
 import com.litsite.lit.dto.CreateRatingRequest;

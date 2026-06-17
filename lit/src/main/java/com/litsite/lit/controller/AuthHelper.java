@@ -9,6 +9,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+<<<<<<< Updated upstream
+=======
+import java.util.Objects;
+>>>>>>> Stashed changes
 import java.util.Optional;
 
 @Component
@@ -37,4 +41,51 @@ public class AuthHelper {
         }
         return Optional.empty();
     }
+<<<<<<< Updated upstream
+=======
+
+    public boolean hasRole(String roleName) {
+        try {
+            return getCurrentUserOrThrow().hasRole(roleName);
+        } catch (ResponseStatusException e) {
+            return false;
+        }
+    }
+
+    // ✅ Проверка нескольких ролей
+    public boolean hasAnyRole(String... roleNames) {
+        try {
+            return getCurrentUserOrThrow().hasAnyRole(roleNames);
+        } catch (ResponseStatusException e) {
+            return false;
+        }
+    }
+
+    // ✅ Удобные хелперы
+    public boolean isAdmin() {
+        return hasRole("ROLE_ADMIN");
+    }
+
+    public boolean isModerator() {
+        return hasRole("ROLE_MODERATOR");
+    }
+
+    public boolean isAdminOrModerator() {
+        return hasAnyRole("ROLE_ADMIN", "ROLE_MODERATOR");
+    }
+
+    // ✅ В конец класса AuthHelper
+    public boolean isOwner(Long resourceOwnerId) {
+        try {
+            MyUser user = getCurrentUserOrThrow();
+            return user.getUserId().equals(resourceOwnerId);
+        } catch (ResponseStatusException e) {
+            return false;
+        }
+    }
+
+    public boolean isOwnerOrHasRole(Long resourceOwnerId, String... roleNames) {
+        return isOwner(resourceOwnerId) || hasAnyRole(roleNames);
+    }
+>>>>>>> Stashed changes
 }

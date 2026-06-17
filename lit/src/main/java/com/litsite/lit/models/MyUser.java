@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "my_user")
@@ -26,9 +27,11 @@ public class MyUser {
     private LocalDateTime registrationDate;
     private String profileDescription;
     private Boolean isEnabled;
-    private String roles;
     private String verificationCode;
     private LocalDateTime verificationCodeExpiresAt;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
 
     public Boolean isEnabled() {
         return isEnabled;
@@ -37,6 +40,15 @@ public class MyUser {
     public void setEnabled(Boolean isEnabled) {
         this.isEnabled = isEnabled;
     }
+
+    @ToString.Exclude
+    @ManyToMany(fetch = FetchType.EAGER) // EAGER важен для Spring Security
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     @ToString.Exclude
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
@@ -73,6 +85,41 @@ public class MyUser {
         this.bookLists = bookLists;
         this.ratings = ratings;
     }
+    public MyUser(String passwordHash, String username, String email,
+                  LocalDateTime registrationDate, String profileDescription,
+                  Set<Role> roles) {
+        this.passwordHash = passwordHash;
+        this.username = username;
+        this.email = email;
+        this.registrationDate = registrationDate;
+        this.profileDescription = profileDescription;
+        this.roles = roles != null ? roles : Set.of();
+    }
 
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles.stream()
+                .map(role -> (GrantedAuthority) () -> role.getName())
+                .collect(Collectors.toSet());
+    }
+
+    public boolean hasRole(String roleName) {
+        return roles.stream().anyMatch(r -> r.getName().equals(roleName));
+    }
+
+    public boolean hasAnyRole(String... roleNames) {
+        return roles.stream().anyMatch(r -> Arrays.asList(roleNames).contains(r.getName()));
+    }
+
+    public boolean isAdminOrModerator() {
+        return hasAnyRole("ROLE_ADMIN", "ROLE_MODERATOR");
+    }
+
+    public void addRole(Role role) {
+        roles.add(role);
+    }
+
+    public void removeRole(Role role) {
+        roles.remove(role);
+    }
 }
 

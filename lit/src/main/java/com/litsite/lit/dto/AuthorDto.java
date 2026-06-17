@@ -7,4 +7,6 @@ public class AuthorDto {
     private Long userId;
     private String username;
     private String profileDescription;
+    private boolean isEnabled;
+    private String avatarUrl;
 }

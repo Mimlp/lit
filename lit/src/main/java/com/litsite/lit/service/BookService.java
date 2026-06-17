@@ -10,6 +10,7 @@ import com.litsite.lit.models.Tag;
 import com.litsite.lit.repository.BookRepository;
 import com.litsite.lit.repository.TagRepository;
 import com.litsite.lit.security.CustomUserDetails;
+import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,10 @@ public class BookService {
     private final TagRepository tagRepository;
     private final RatingService ratingService;
     private final AuthHelper authHelper;
+<<<<<<< Updated upstream
+=======
+    private final EmailService emailService;
+>>>>>>> Stashed changes
 
     @Transactional
     public BookDto getBookById(Long id) {
@@ -111,16 +116,62 @@ public class BookService {
     }
 
     public BookDto updateBook(Long id, BookDto bookDto) {
+<<<<<<< Updated upstream
         Book book = bookRepository.findById(id)
+=======
+        MyUser currentUser = authHelper.getCurrentUserOrThrow();
+        Book book = bookRepository.findByIdWithUser(id)
+>>>>>>> Stashed changes
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found"));
+
+        if (!authHelper.isOwnerOrHasRole(book.getUser().getUserId(), "ROLE_MODERATOR", "ROLE_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
 
         book.setTitle(bookDto.getTitle());
         book.setDescription(bookDto.getDescription());
+<<<<<<< Updated upstream
         return bookMapper.bookToBookDto(bookRepository.save(book), getCurrentUserId());
     }
 
     public void deleteBook(Long id) {
         bookRepository.deleteById(id);
+=======
+        return bookMapper.bookToBookDto(bookRepository.save(book), currentUser.getUserId());
+    }
+
+    @Transactional
+    public void deleteBook(Long bookId, String moderationReason) {
+        MyUser currentUser = authHelper.getCurrentUserOrThrow();
+        Book book = bookRepository.findByIdWithUser(bookId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found"));
+
+        // 🔐 Проверка: владелец ИЛИ модератор/админ
+        if (!authHelper.isOwnerOrHasRole(book.getUser().getUserId(), "ROLE_MODERATOR", "ROLE_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Недостаточно прав");
+        }
+
+        // ✉️ Если удаляет не владелец — отправляем уведомление
+        boolean isModeratorAction = !currentUser.getUserId().equals(book.getUser().getUserId());
+        if (isModeratorAction && book.getUser().getEmail() != null) {
+            try {
+                emailService.sendContentModerationNotice(
+                        book.getUser().getEmail(),
+                        "книга",
+                        book.getTitle(),
+                        moderationReason != null ? moderationReason : "Нарушение правил сообщества"
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send moderation email: " + e.getMessage());
+            }
+        }
+
+        bookRepository.delete(book);
+    }
+
+    public void deleteBook(Long id) {
+        deleteBook(id, null);
+>>>>>>> Stashed changes
     }
 
     private Long getCurrentUserId() {
@@ -136,6 +187,7 @@ public class BookService {
         if (keyword != null && keyword.isBlank()) {
             keyword = null;
         }
+<<<<<<< Updated upstream
 
         Set<Long> tagIds = filter.getTagIds();
         if (tagIds != null && tagIds.isEmpty()) {
@@ -144,6 +196,34 @@ public class BookService {
 
         return enrichSimpleDtosWithRating(
                 bookRepository.findByKeywordAndTags(keyword, tagIds)
+=======
+        // 🔑 Конвертируем в lowercase в Java, а не в SQL
+        if (keyword != null) {
+            keyword = keyword.toLowerCase();
+        } else {
+            keyword = "";
+        }
+
+        Set<Long> includeTagIds = filter.getIncludeTagIds();
+        if (includeTagIds != null && includeTagIds.isEmpty()) {
+            includeTagIds = null;  // Чтобы сработало :param IS NULL
+        }
+        Set<Long> excludeTagIds = filter.getExcludeTagIds();
+        if (excludeTagIds != null && excludeTagIds.isEmpty()) {
+            excludeTagIds = null;
+        }
+        long includeTagIdsSize = (includeTagIds != null) ? includeTagIds.size() : 0;
+        System.out.println("keyword = " + keyword);
+        System.out.println("class = " +
+                (keyword == null ? "null" : keyword.getClass()));
+        return enrichSimpleDtosWithRating(
+                bookRepository.findByKeywordAndTags(
+                        keyword,
+                        includeTagIds,
+                        includeTagIdsSize,
+                        excludeTagIds
+                )
+>>>>>>> Stashed changes
         );
     }
 

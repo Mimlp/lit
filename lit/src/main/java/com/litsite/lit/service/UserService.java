@@ -10,6 +10,7 @@ import com.litsite.lit.repository.BookRepository;
 import com.litsite.lit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -62,5 +63,13 @@ public class UserService {
 
     public Book saveBook(Book book) {
         return bookRepository.save(book);
+    }
+
+    public MyUser save(MyUser targetUser) {
+        return userRepository.save(targetUser);
+    }
+
+    public Optional<MyUser> findById(Long id) {
+        return userRepository.findById(id);
     }
 }

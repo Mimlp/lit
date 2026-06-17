@@ -10,7 +10,7 @@ import java.util.List;
 public record CustomUserDetails(MyUser user) implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return user.getAuthorities();
     }
 
     @Override

@@ -1,4 +1,7 @@
+<<<<<<< Updated upstream
 // com.litsite.lit.dto.RatingStats.java (вспомогательный класс)
+=======
+>>>>>>> Stashed changes
 package com.litsite.lit.dto;
 
 import lombok.AllArgsConstructor;
